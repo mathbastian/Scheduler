@@ -1,6 +1,5 @@
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /*
@@ -76,6 +75,11 @@ public class Scheduler extends Thread{
                     
                     SISOPInterface.outputTextArea.append("\n");
                     
+                    SISOPInterface.outputTextArea.append("PRIORITY = " 
+                            + runningProcess.getPriority());
+                    
+                    SISOPInterface.outputTextArea.append("\n");
+                    
                     SISOPInterface.outputTextArea.append("REMAINING TIME = " 
                             + runningProcess.getRemainingTime());
                     
@@ -85,10 +89,8 @@ public class Scheduler extends Thread{
                         processes.remove(runningProcess);
                         runningProcess = null;
                         opQuantum = quantum;
-                    } else if ( opQuantum > 0 ) {
-                    	
-                    } else if ( opQuantum == 0 && opQuantum != quantum ) { //preemptivo com quantum
-                    	
+                    } else { // if not finished, check for other processes with higher priority.
+                    	runningProcess = getNextProcess(runningProcess);
                     }
                     
                 }
@@ -102,24 +104,27 @@ public class Scheduler extends Thread{
         }
     }
     
-    private Integer getNextProcessIndex() {
-    	Integer priority = 6;
-    	Integer index = 0;
-    	Process currentProcess = null;
+    private Process getNextProcess(Process runningProcess) {
+    	Integer priority = runningProcess.getPriority();
+    	Integer insertionTime = runningProcess.getInsertionTime();
+    	Process currentProcess = runningProcess;
+    	
     	for (Process process : processes) {
+    		
 			if(process.getPriority() < priority) {
 				priority = process.getPriority();
-				index = processes.indexOf(process);
 				currentProcess = process;
 			}
+			
 			else if(process.getPriority() == priority) {
-				if(process.getInsertionTime() < currentProcess.getInsertionTime()) {
-					index = processes.indexOf(process);
+				if(process.getInsertionTime() < insertionTime) {
 					currentProcess = process;
 				}
 			}
+			
 		}
-    	return processes.indexOf(currentProcess);
+    	
+    	return currentProcess;
     }
     
 }
