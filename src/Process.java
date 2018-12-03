@@ -15,6 +15,7 @@ public class Process {
     private Integer remainingTime;
     private Integer insertionTime;
     private Boolean finished;
+    private Integer waitingTime = 0;
 
     public Process(Integer pid, Integer priority, Integer totalTime, Integer currentTime) {
         this.pid = pid;
@@ -30,6 +31,14 @@ public class Process {
      */
     public Integer getPid() {
         return pid;
+    }
+    
+    public void addWaitingTime() {
+    	this.waitingTime++;
+    }
+    
+    public Integer getWaitingTime() {
+    	return this.waitingTime;
     }
     
     /**

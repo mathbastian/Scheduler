@@ -62,34 +62,20 @@ public class Scheduler extends Thread{
                 }
                 
                 if(runningProcess == null){
-                    SISOPInterface.outputTextArea.setText("IDLE!");
+                    displayWaitingTime();
                 }else{
-                    SISOPInterface.outputTextArea
-                            .setText("RUNNING PROCESS PID = "
-                            + runningProcess.getPid());
-                    
-                    SISOPInterface.outputTextArea.append("\n");
-                    
-                    SISOPInterface.outputTextArea.append("INSERTION TIME = " 
-                            + runningProcess.getInsertionTime());
-                    
-                    SISOPInterface.outputTextArea.append("\n");
-                    
-                    SISOPInterface.outputTextArea.append("PRIORITY = " 
-                            + runningProcess.getPriority());
-                    
-                    SISOPInterface.outputTextArea.append("\n");
-                    
-                    SISOPInterface.outputTextArea.append("REMAINING TIME = " 
-                            + runningProcess.getRemainingTime());
-                    
-                	runningProcess.runProcess();
+                	
+                	displayProcessInformation();            
+                	
+                	runningProcess.runProcess();   	
                     
                     if(runningProcess.isFinished()){
-                        processes.remove(runningProcess);
+                        //processes.remove(runningProcess);
+                    	updateWaitingProcesses(runningProcess);
                         runningProcess = null;
                         opQuantum = quantum;
-                    } else { // if not finished, check for other processes with higher priority.
+                    } else { // get another process with higher priority considering quantum.
+                    	updateWaitingProcesses(runningProcess);
                     	runningProcess = getNextProcess(runningProcess);
                     }
                     
@@ -111,13 +97,26 @@ public class Scheduler extends Thread{
     	
     	for (Process process : processes) {
     		
+    		if (process.isFinished() || process.equals(runningProcess))
+    			continue;
+    		
 			if(process.getPriority() < priority) {
 				priority = process.getPriority();
 				currentProcess = process;
 			}
 			
 			else if(process.getPriority() == priority) {
-				if(process.getInsertionTime() < insertionTime) {
+				
+				if ( isQuantumRelevant() ) {
+					if ( opQuantum > 0 ) {
+						opQuantum--;
+						return runningProcess;
+					}
+					else {
+						currentProcess = process;
+						opQuantum = quantum;
+					}
+				} else if (process.getInsertionTime() < insertionTime) {
 					currentProcess = process;
 				}
 			}
@@ -125,6 +124,63 @@ public class Scheduler extends Thread{
 		}
     	
     	return currentProcess;
+    }
+    
+    private boolean isQuantumRelevant() {
+    	
+    	if( quantum == 0 )
+    		return false;
+    	
+    	return true;
+    	
+    }
+    
+    private void updateWaitingProcesses( Process runningProcess ) {
+    	for (Process process : processes) {
+			if(process.equals(runningProcess))
+				continue;
+			
+			if(process.isFinished() == false) {
+				process.addWaitingTime();
+			}
+		}
+    }
+    
+    private void displayWaitingTime() {
+    	SISOPInterface.outputTextArea.setText("IDLE! \n");
+    	
+    	if (processes.size() == 0)
+    		return;
+    	
+    	Integer amountOfProcesses = processes.size();
+        Integer waitingTime = 0;
+        
+        for (Process process : processes) {
+        	waitingTime += process.getWaitingTime();
+		}
+        float averageWaitingTime = waitingTime / amountOfProcesses;
+        SISOPInterface.outputTextArea.append("AVERAGE WAITING TIME = " 
+                + averageWaitingTime);
+    }
+    
+    private void displayProcessInformation() {
+    	SISOPInterface.outputTextArea.setText("RUNNING PROCESS PID = "
+    										+ runningProcess.getPid());
+
+    	SISOPInterface.outputTextArea.append("\n");
+
+		SISOPInterface.outputTextArea.append("INSERTION TIME = " 
+		        			+ runningProcess.getInsertionTime());
+		
+		SISOPInterface.outputTextArea.append("\n");
+		
+		SISOPInterface.outputTextArea.append("PRIORITY = " 
+		        			+ runningProcess.getPriority());
+		
+		SISOPInterface.outputTextArea.append("\n");
+		
+		SISOPInterface.outputTextArea.append("REMAINING TIME = " 
+		        			+ runningProcess.getRemainingTime());
     }
     
 }
